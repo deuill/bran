@@ -78,12 +78,15 @@ func Init(applets []string) (chan *Segment, error) {
 			var seg Segment
 			seg.Name = name
 
+			var msg *Message
+
 			for {
 				// Get message from applet.
-				seg.Message = available[name].Run()
+				if msg = available[name].Run(); msg != nil {
+					seg.Message = msg
+					ln <- &seg
+				}
 
-				// Send segment and wait.
-				ln <- &seg
 				available[name].Wait()
 			}
 		}(name)

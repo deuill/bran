@@ -13,26 +13,9 @@ import (
 	"github.com/rakyll/globalconf"
 
 	// Internal applets
+	_ "github.com/deuill/granola/applet/cpu"
 	_ "github.com/deuill/granola/applet/date"
 )
-
-func listen(ln chan *applet.Segment) {
-	// Listen for and terminate Mash on SIGKILL or SIGINT signals.
-	kill := make(chan os.Signal)
-	signal.Notify(kill, os.Interrupt, os.Kill)
-
-	// Print JSON header.
-	fmt.Print(`{"version": 1, "click_events": true}` + "\n[\n")
-
-	for {
-		select {
-		case seg := <-ln:
-			fmt.Printf("[%s],\n", seg)
-		case <-kill:
-			return
-		}
-	}
-}
 
 func main() {
 	// Initialize configuration, reading from environment variables using a
@@ -54,6 +37,37 @@ func main() {
 		os.Exit(2)
 	}
 
-	listen(ln)
-	os.Exit(0)
+	// Listen for and terminate Mash on SIGKILL or SIGINT signals.
+	kill := make(chan os.Signal)
+	signal.Notify(kill, os.Interrupt, os.Kill)
+
+	// Print JSON header.
+	fmt.Print(`{"version": 1, "click_events": true}` + "\n[\n")
+
+	var applets = make(map[string]int)
+	var status = make([]*applet.Segment, len(os.Args[1:]))
+
+	// Create map of applet names against their order in the status bar.
+	for i, name := range os.Args[1:] {
+		applets[name] = i
+	}
+
+	for {
+		select {
+		case seg := <-ln:
+			status[applets[seg.Name]] = seg
+
+			// Concatenate segments and print.
+			var buf string
+			for _, s := range status {
+				if s != nil {
+					buf += s.String() + ","
+				}
+			}
+
+			fmt.Printf("[%s],\n", buf[:len(buf)-1])
+		case <-kill:
+			os.Exit(0)
+		}
+	}
 }
