@@ -15,6 +15,7 @@ import (
 	// Internal applets
 	_ "github.com/deuill/granola/applet/cpu"
 	_ "github.com/deuill/granola/applet/date"
+	_ "github.com/deuill/granola/applet/memory"
 )
 
 func main() {
