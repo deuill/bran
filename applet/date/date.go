@@ -29,6 +29,11 @@ func (d *Date) Wait() {
 	time.Sleep(time.Duration(60-time.Now().Second()) * time.Second)
 }
 
+// Init processes post-registration operations.
+func (d *Date) Init() error {
+	return nil
+}
+
 func init() {
 	flags := flag.NewFlagSet("date", flag.ContinueOnError)
 	date := &Date{

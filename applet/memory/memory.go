@@ -76,18 +76,24 @@ func (m *Memory) Wait() {
 	time.Sleep(time.Duration(*m.Interval) * time.Second)
 }
 
-func init() {
-	info, err := os.Open("/proc/meminfo")
+// Init processes post-registration operations.
+func (m *Memory) Init() error {
+	var err error
+
+	m.info, err = os.Open("/proc/meminfo")
 	if err != nil {
-		return
+		return err
 	}
 
-	flags := flag.NewFlagSet("memory", flag.ContinueOnError)
+	return nil
+}
+
+func init() {
+	var flags flag.FlagSet
 	mem := &Memory{
 		Interval: flags.Int("interval", 5, ""),
 		Icon:     flags.String("icon", "", ""),
-		info:     info,
 	}
 
-	applet.Register("memory", mem, flags)
+	applet.Register("memory", mem, &flags)
 }

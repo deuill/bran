@@ -35,6 +35,7 @@ func (s *Segment) String() string {
 // Applet represents a self-contained process which sends messages to the
 // underlying statusbar for rendering.
 type Applet interface {
+	Init() error
 	Run() *Message
 	Wait()
 }
@@ -73,16 +74,19 @@ func Init(applets []string) (chan *Segment, error) {
 	// Run each default applet action in an infinite loop. Applets are supposed
 	// to handle waiting in their own actions, otherwise they risk taxing the CPU.
 	for _, name := range applets {
+		err := available[name].Init()
+		if err != nil {
+			return nil, err
+		}
+
 		go func(name string) {
 			// Initialize segment for applet.
 			var seg Segment
 			seg.Name = name
 
-			var msg *Message
-
 			for {
 				// Get message from applet.
-				if msg = available[name].Run(); msg != nil {
+				if msg := available[name].Run(); msg != nil {
 					seg.Message = msg
 					ln <- &seg
 				}

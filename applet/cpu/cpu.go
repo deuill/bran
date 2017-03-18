@@ -3,6 +3,7 @@ package cpu
 import (
 	// Standard library
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -114,32 +115,37 @@ func (c *CPU) temp() int {
 	return num / 1000
 }
 
+// Init processes post-registration operations.
+func (c *CPU) Init() error {
+	var err error
+
+	c.stat, err = os.Open("/proc/stat")
+	if err != nil {
+		return err
+	}
+
+	c.thermal, err = os.Open("/sys/class/thermal/thermal_zone0/temp")
+	if err != nil {
+		return err
+	}
+
+	// Calculate initial CPU usage stats for subsequent runs.
+	c.prev = c.usage()
+	if c.prev == nil {
+		return fmt.Errorf("Could not fetch initial CPU usage stats")
+	}
+
+	return nil
+}
+
 func init() {
-	stat, err := os.Open("/proc/stat")
-	if err != nil {
-		return
-	}
-
-	thermal, err := os.Open("/sys/class/thermal/thermal_zone0/temp")
-	if err != nil {
-		return
-	}
-
-	flags := flag.NewFlagSet("cpu", flag.ContinueOnError)
+	var flags flag.FlagSet
 	cpu := &CPU{
 		Interval: flags.Int("interval", 5, ""),
 		Scale:    flags.String("scale", "C", ""),
 		IconCPU:  flags.String("icon-cpu", "", ""),
 		IconTemp: flags.String("icon-temp", "", ""),
-		stat:     stat,
-		thermal:  thermal,
 	}
 
-	// Calculate initial CPU usage stats for subsequent runs.
-	cpu.prev = cpu.usage()
-	if cpu.prev == nil {
-		return
-	}
-
-	applet.Register("cpu", cpu, flags)
+	applet.Register("cpu", cpu, &flags)
 }
