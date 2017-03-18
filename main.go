@@ -16,6 +16,7 @@ import (
 	_ "github.com/deuill/granola/applet/cpu"
 	_ "github.com/deuill/granola/applet/date"
 	_ "github.com/deuill/granola/applet/memory"
+	_ "github.com/deuill/granola/applet/volume"
 )
 
 func main() {
