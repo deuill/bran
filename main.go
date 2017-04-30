@@ -2,73 +2,93 @@ package main
 
 import (
 	// Standard library
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
+	"syscall"
 
 	// Internal packages
-	"github.com/deuill/granola/applet"
+	"github.com/deuill/granola/statusbar"
 
-	// Third-party packages
-	"github.com/rakyll/globalconf"
-
-	// Internal applets
-	_ "github.com/deuill/granola/applet/cpu"
-	_ "github.com/deuill/granola/applet/date"
-	_ "github.com/deuill/granola/applet/memory"
-	_ "github.com/deuill/granola/applet/volume"
+	// Statusbar applets
+	"github.com/deuill/granola/cpu"
+	"github.com/deuill/granola/date"
+	"github.com/deuill/granola/memory"
+	"github.com/deuill/granola/volume"
 )
 
+var registered = map[string]func() *statusbar.Applet{
+	"cpu":    cpu.New,
+	"date":   date.New,
+	"memory": memory.New,
+	"volume": volume.New,
+}
+
+var (
+	appletDesc   = regexp.MustCompile("([[:alpha:]]+)(?::(.+))?")
+	appletConfig = regexp.MustCompile("([[:alnum:]]+)=([[:graph:]]+)")
+)
+
+func setup(desc []string) ([]*statusbar.Applet, error) {
+	var applets []*statusbar.Applet
+
+	for i := range desc {
+		// Parse command-line description for applet.
+		cmd := appletDesc.FindStringSubmatch(desc[i])
+		name, values := cmd[1], cmd[2]
+
+		if _, ok := registered[name]; ok == false {
+			return nil, fmt.Errorf("applet with name '%s' does not exist", name)
+		}
+
+		// Initialize applet configuration, if any.
+		conf := make(map[string]string)
+		for _, v := range appletConfig.FindAllStringSubmatch(values, -1) {
+			conf[v[1]] = v[2]
+		}
+
+		applet := registered[name]()
+		applet.Set(conf)
+
+		applets = append(applets, applet)
+	}
+
+	return applets, nil
+}
+
 func main() {
-	// Initialize configuration, reading from environment variables using a
-	// 'GRANOLA_' prefix first, then moving to a static configuration file,
-	// usually located in '~/.config/granola/config.ini'.
-	conf, err := globalconf.New("granola")
+	// Initialize applet list from command-line description.
+	applets, err := setup(os.Args[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading configuration: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error initializing statusbar: %s\n", err)
 		os.Exit(1)
 	}
 
-	conf.EnvPrefix = "GRANOLA_"
-	conf.ParseAll()
-
-	// Initialize requested applets and return message listener.
-	ln, err := applet.Init(os.Args[1:])
+	// Initialize statusbar with pre-declared applet definitions.
+	bar, err := statusbar.New(applets...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing applets: %s\n", err)
-		os.Exit(2)
+		fmt.Fprintf(os.Stderr, "Error initializing statusbar: %s\n", err)
+		os.Exit(1)
 	}
 
-	// Listen for and terminate Mash on SIGKILL or SIGINT signals.
-	kill := make(chan os.Signal)
-	signal.Notify(kill, os.Interrupt, os.Kill)
+	// Listen for and terminate Granola on SIGTERM or SIGINT signals.
+	halt := make(chan os.Signal)
+	signal.Notify(halt, syscall.SIGTERM, syscall.SIGINT)
+
+	// Listen for incoming messages from applets.
+	ln := bar.Listen()
 
 	// Print JSON header.
 	fmt.Print(`{"version": 1, "click_events": true}` + "\n[\n")
 
-	var applets = make(map[string]int)
-	var status = make([]*applet.Segment, len(os.Args[1:]))
-
-	// Create map of applet names against their order in the status bar.
-	for i, name := range os.Args[1:] {
-		applets[name] = i
-	}
-
 	for {
 		select {
-		case seg := <-ln:
-			status[applets[seg.Name]] = seg
-
-			// Concatenate segments and print.
-			var buf string
-			for _, s := range status {
-				if s != nil {
-					buf += s.String() + ","
-				}
-			}
-
-			fmt.Printf("[%s],\n", buf[:len(buf)-1])
-		case <-kill:
+		case s := <-ln:
+			buf, _ := json.Marshal(s)
+			fmt.Println(string(buf) + ",")
+		case <-halt:
 			os.Exit(0)
 		}
 	}

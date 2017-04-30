@@ -10,7 +10,7 @@ import (
 	"time"
 
 	// Internal packages
-	"github.com/deuill/granola/applet"
+	"github.com/deuill/granola/statusbar"
 )
 
 // CPU represents an applet containing information about CPU usage and temperature.
@@ -20,7 +20,7 @@ type CPU struct {
 	IconCPU  *string // The CPU icon.
 	IconTemp *string // The temperature icon.
 
-	msg  applet.Message
+	msg  statusbar.Message
 	prev *usage
 
 	stat    *os.File
@@ -34,7 +34,7 @@ type usage struct {
 }
 
 // Run returns a message containing the current CPU load and temperature.
-func (c *CPU) Run() *applet.Message {
+func (c *CPU) Run() *statusbar.Message {
 	// Get current CPU usage.
 	now := c.usage()
 
@@ -138,7 +138,8 @@ func (c *CPU) Init() error {
 	return nil
 }
 
-func init() {
+// New returns a new instance of the CPU applet.
+func New() *statusbar.Applet {
 	var flags flag.FlagSet
 	cpu := &CPU{
 		Interval: flags.Int("interval", 5, ""),
@@ -147,5 +148,8 @@ func init() {
 		IconTemp: flags.String("icon-temp", "", ""),
 	}
 
-	applet.Register("cpu", cpu, &flags)
+	applet := statusbar.NewApplet("cpu", cpu)
+	applet.Flags(&flags)
+
+	return applet
 }

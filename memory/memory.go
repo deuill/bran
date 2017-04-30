@@ -10,7 +10,7 @@ import (
 	"time"
 
 	// Internal packages
-	"github.com/deuill/granola/applet"
+	"github.com/deuill/granola/statusbar"
 )
 
 // Memory represents an applet containing information about current memory usage.
@@ -18,12 +18,12 @@ type Memory struct {
 	Interval *int    // The time interval between updates, in seconds.
 	Icon     *string // The memory icon.
 
-	msg  applet.Message
+	msg  statusbar.Message
 	info *os.File
 }
 
 // Run returns a message containing the current memory usage.
-func (m *Memory) Run() *applet.Message {
+func (m *Memory) Run() *statusbar.Message {
 	var total, free, buffers, cached int
 	var seen int
 
@@ -88,12 +88,16 @@ func (m *Memory) Init() error {
 	return nil
 }
 
-func init() {
+// New returns a new instance of the memory applet.
+func New() *statusbar.Applet {
 	var flags flag.FlagSet
 	mem := &Memory{
 		Interval: flags.Int("interval", 5, ""),
 		Icon:     flags.String("icon", "", ""),
 	}
 
-	applet.Register("memory", mem, &flags)
+	applet := statusbar.NewApplet("memory", mem)
+	applet.Flags(&flags)
+
+	return applet
 }

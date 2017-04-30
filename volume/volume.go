@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	// Internal packages
-	"github.com/deuill/granola/applet"
+	"github.com/deuill/granola/statusbar"
 )
 
 // Volume represents an applet containing the current input/output volume levels.
@@ -19,11 +19,11 @@ type Volume struct {
 	Icon *string // The volume icon.
 	Card *int    // The sound card to monitor, as an index.
 
-	msg applet.Message
+	msg statusbar.Message
 }
 
 // Run returns a message containing the current volume levels.
-func (v *Volume) Run() *applet.Message {
+func (v *Volume) Run() *statusbar.Message {
 	v.msg.Text = fmt.Sprintf("%s %d%%", *v.Icon, C.volume())
 	return &v.msg
 }
@@ -38,11 +38,15 @@ func (v *Volume) Init() error {
 	return nil
 }
 
-func init() {
+// New returns a new instance of the volume applet.
+func New() *statusbar.Applet {
 	var flags flag.FlagSet
 	volume := &Volume{
 		Icon: flags.String("icon", "", ""),
 	}
 
-	applet.Register("volume", volume, &flags)
+	applet := statusbar.NewApplet("volume", volume)
+	applet.Flags(&flags)
+
+	return applet
 }
