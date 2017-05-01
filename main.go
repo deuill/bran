@@ -10,13 +10,13 @@ import (
 	"syscall"
 
 	// Internal packages
-	"github.com/deuill/granola/statusbar"
+	"github.com/deuill/bran/statusbar"
 
 	// Statusbar applets
-	"github.com/deuill/granola/cpu"
-	"github.com/deuill/granola/date"
-	"github.com/deuill/granola/memory"
-	"github.com/deuill/granola/volume"
+	"github.com/deuill/bran/cpu"
+	"github.com/deuill/bran/date"
+	"github.com/deuill/bran/memory"
+	"github.com/deuill/bran/volume"
 )
 
 var registered = map[string]func() *statusbar.Applet{
@@ -73,7 +73,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Listen for and terminate Granola on SIGTERM or SIGINT signals.
+	// Listen for and terminate Bran on SIGTERM or SIGINT signals.
 	halt := make(chan os.Signal)
 	signal.Notify(halt, syscall.SIGTERM, syscall.SIGINT)
 

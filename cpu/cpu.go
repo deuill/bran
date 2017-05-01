@@ -10,7 +10,7 @@ import (
 	"time"
 
 	// Internal packages
-	"github.com/deuill/granola/statusbar"
+	"github.com/deuill/bran/statusbar"
 )
 
 // CPU represents an applet containing information about CPU usage and temperature.

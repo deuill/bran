@@ -10,7 +10,7 @@ import (
 	"time"
 
 	// Internal packages
-	"github.com/deuill/granola/statusbar"
+	"github.com/deuill/bran/statusbar"
 )
 
 // Memory represents an applet containing information about current memory usage.

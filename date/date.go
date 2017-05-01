@@ -6,7 +6,7 @@ import (
 	"time"
 
 	// Internal packages
-	"github.com/deuill/granola/statusbar"
+	"github.com/deuill/bran/statusbar"
 )
 
 // Date represents a message containing the current date.

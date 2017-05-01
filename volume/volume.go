@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	// Internal packages
-	"github.com/deuill/granola/statusbar"
+	"github.com/deuill/bran/statusbar"
 )
 
 // Volume represents an applet containing the current input/output volume levels.
