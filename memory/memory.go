@@ -81,11 +81,7 @@ func (m *Memory) Init() error {
 	var err error
 
 	m.info, err = os.Open("/proc/meminfo")
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // New returns a new instance of the memory applet.
