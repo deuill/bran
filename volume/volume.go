@@ -17,9 +17,7 @@ import (
 // Volume represents an applet containing the current input/output volume levels.
 type Volume struct {
 	Icon *string // The volume icon.
-	Card *int    // The sound card to monitor, as an index.
-
-	msg statusbar.Message
+	msg  statusbar.Message
 }
 
 // Run returns a message containing the current volume levels.
